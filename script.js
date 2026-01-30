@@ -3,7 +3,7 @@ const userInput = document.getElementById('userInput');
 const sendBtn = document.getElementById('sendBtn');
 
 // ضع مفتاح الـ API الخاص بك هنا
-const API_KEY = "AIzaSyBe9fMsnSCTZqD1nyu538McCViP6CSbJGQ"; 
+const API_KEY = "env.GEMINI_API_KEY"; 
 
 async function handleChat() {
     const text = userInput.value.trim();
@@ -59,3 +59,4 @@ sendBtn.addEventListener('click', handleChat);
 userInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') handleChat();
 });
+
