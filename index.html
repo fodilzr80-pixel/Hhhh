@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atlas AI | Premium Intelligent Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        
+        :root {
+            --bg-dark: #050505;
+            --accent-primary: #3b82f6;
+            --accent-secondary: #6366f1;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: #f3f4f6;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .glass {
+            background: rgba(10, 10, 10, 0.7);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .chat-scroll::-webkit-scrollbar { width: 3px; }
+        .chat-scroll::-webkit-scrollbar-track { background: transparent; }
+        .chat-scroll::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
+
+        .typing-dot {
+            width: 5px; height: 5px; background: var(--accent-primary);
+            border-radius: 50%; display: inline-block;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
+            40% { transform: scale(1.0); opacity: 1; }
+        }
+
+        .slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .owner-gradient {
+            background: linear-gradient(135deg, #3b82f6, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+
+        #main-app { display: none; }
+    </style>
+    <script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react/": "https://esm.sh/react@^19.2.3/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="flex flex-col items-center justify-center">
+
+    <!-- Onboarding Section -->
+    <div id="onboarding" class="w-full max-w-md p-10 flex flex-col items-center slide-up">
+        <div class="mb-12 text-center">
+            <h1 class="text-6xl font-extrabold mb-3 tracking-tighter bg-gradient-to-br from-blue-400 to-indigo-600 bg-clip-text text-transparent italic">
+                ATLAS AI
+            </h1>
+            <div class="px-4 py-1 inline-block bg-blue-500/10 text-blue-400 text-[10px] font-bold rounded-full border border-blue-500/20 uppercase tracking-widest">
+                FREE VERSION • GLOBAL ACCESS
+            </div>
+        </div>
+
+        <form id="onboarding-form" class="w-full space-y-6">
+            <div class="space-y-2">
+                <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Full Identity</label>
+                <input type="text" id="user-name" required class="w-full bg-zinc-900/50 border border-white/5 rounded-2xl p-4 focus:outline-none focus:border-blue-500/50 transition-all text-sm" placeholder="Enter your name">
+            </div>
+            
+            <div class="space-y-2">
+                <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Birth Details</label>
+                <div class="grid grid-cols-3 gap-3">
+                    <input type="number" id="dob-day" placeholder="DD" min="1" max="31" required class="bg-zinc-900/50 border border-white/5 rounded-2xl p-4 focus:outline-none focus:border-blue-500/50 text-center text-sm">
+                    <input type="number" id="dob-month" placeholder="MM" min="1" max="12" required class="bg-zinc-900/50 border border-white/5 rounded-2xl p-4 focus:outline-none focus:border-blue-500/50 text-center text-sm">
+                    <input type="number" id="dob-year" placeholder="YYYY" min="1900" max="2025" required class="bg-zinc-900/50 border border-white/5 rounded-2xl p-4 focus:outline-none focus:border-blue-500/50 text-center text-sm">
+                </div>
+            </div>
+
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-2xl shadow-xl shadow-blue-600/10 transition-all active:scale-95">
+                Initialize Atlas AI
+            </button>
+        </form>
+
+        <footer class="mt-12 text-center text-[9px] text-zinc-600 font-bold uppercase tracking-[0.2em] leading-relaxed">
+            Engineered by Fodil • Algeria, Tiaret<br>Propelled by Advanced Neural Networks
+        </footer>
+    </div>
+
+    <!-- Main App Structure -->
+    <div id="main-app" class="w-full h-full flex flex-col lg:flex-row overflow-hidden">
+        
+        <!-- Navigation Sidebar -->
+        <aside id="sidebar" class="fixed lg:relative inset-y-0 left-0 z-50 w-72 glass border-r border-white/5 -translate-x-full lg:translate-x-0 transition-transform duration-500 ease-in-out">
+            <div class="flex flex-col h-full p-8">
+                <div class="flex items-center space-x-3 mb-12">
+                    <div class="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center font-black text-white shadow-xl shadow-blue-600/20">A</div>
+                    <div>
+                        <h2 class="font-black text-xl leading-none italic tracking-tight">ATLAS AI</h2>
+                        <div class="flex items-center gap-1.5 mt-1">
+                            <div class="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                            <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">Neural Link Active</span>
+                        </div>
+                    </div>
+                </div>
+
+                <nav class="flex-grow space-y-2">
+                    <button onclick="app.nav('chat')" id="nav-chat" class="w-full flex items-center gap-4 p-4 rounded-2xl bg-blue-600/10 text-blue-400 font-bold transition-all">
+                        <i class="fa-solid fa-bolt-lightning w-5"></i>
+                        <span class="text-xs uppercase tracking-widest">Conversations</span>
+                    </button>
+                    <button onclick="app.nav('gallery')" id="nav-gallery" class="w-full flex items-center gap-4 p-4 rounded-2xl text-zinc-500 hover:bg-white/5 transition-all">
+                        <i class="fa-solid fa-wand-magic-sparkles w-5"></i>
+                        <span class="text-xs uppercase tracking-widest">AI Canvas</span>
+                    </button>
+                    <button onclick="app.nav('settings')" id="nav-settings" class="w-full flex items-center gap-4 p-4 rounded-2xl text-zinc-500 hover:bg-white/5 transition-all">
+                        <i class="fa-solid fa-gear w-5"></i>
+                        <span class="text-xs uppercase tracking-widest">System Prefs</span>
+                    </button>
+                </nav>
+
+                <div class="mt-auto">
+                    <div id="dev-badge" class="hidden p-4 mb-4 bg-purple-500/10 border border-purple-500/20 rounded-2xl text-center">
+                        <span class="owner-gradient text-[10px] uppercase tracking-widest">Developer Privileges</span>
+                    </div>
+                    <button onclick="app.logout()" class="w-full flex items-center gap-3 p-4 text-xs font-bold text-red-500/60 hover:text-red-400 transition-all">
+                        <i class="fa-solid fa-power-off"></i>
+                        <span class="uppercase tracking-widest">Disconnect Session</span>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Dynamic Content -->
+        <main class="flex-grow flex flex-col relative">
+            
+            <!-- Mobile Navigation Trigger -->
+            <header class="lg:hidden flex items-center justify-between p-6 glass border-b border-white/5">
+                <button onclick="app.toggleMenu()" class="text-zinc-400"><i class="fa-solid fa-bars-staggered text-xl"></i></button>
+                <span class="font-black italic tracking-tighter">ATLAS</span>
+                <div class="w-6"></div>
+            </header>
+
+            <!-- Conversations View -->
+            <section id="view-chat" class="flex-grow flex flex-col overflow-hidden">
+                <div id="chat-messages" class="chat-scroll flex-grow overflow-y-auto p-6 md:p-12 space-y-8">
+                    <div id="intro-hero" class="h-full flex flex-col items-center justify-center text-center max-w-lg mx-auto space-y-8">
+                        <div class="w-24 h-24 bg-white/5 rounded-[2.5rem] flex items-center justify-center border border-white/10 shadow-2xl">
+                            <i class="fa-solid fa-robot text-4xl text-blue-500"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-3xl font-extrabold mb-4 tracking-tight" id="user-greeting">Welcome</h2>
+                            <p class="text-zinc-500 text-sm leading-relaxed font-medium">I am Atlas AI, your advanced synthetic assistant. Ask me anything, generate images, or analyze complex data—completely free.</p>
+                        </div>
+                        <div class="flex flex-wrap justify-center gap-3">
+                            <button onclick="app.suggest('Generate an image of a cybernetic forest')" class="px-4 py-2 bg-white/5 border border-white/5 rounded-full text-[10px] font-bold uppercase tracking-wider hover:bg-white/10 transition-all">Generate Forest Art</button>
+                            <button onclick="app.suggest('Explain quantum computing like I am five')" class="px-4 py-2 bg-white/5 border border-white/5 rounded-full text-[10px] font-bold uppercase tracking-wider hover:bg-white/10 transition-all">Quantum Computing</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input Zone -->
+                <div class="p-6 md:p-12">
+                    <div class="max-w-4xl mx-auto">
+                        <!-- Preview Images -->
+                        <div id="media-previews" class="flex gap-3 mb-4 empty:hidden"></div>
+
+                        <div class="flex items-end gap-3 p-2 bg-zinc-900/80 glass border border-white/10 rounded-3xl shadow-2xl focus-within:border-blue-500/30 transition-all">
+                            <button onclick="app.openFiles()" class="w-12 h-12 flex items-center justify-center text-zinc-500 hover:text-blue-400 transition-colors">
+                                <i class="fa-solid fa-plus text-lg"></i>
+                            </button>
+                            <textarea id="prompt-input" rows="1" class="flex-grow bg-transparent p-3 focus:outline-none text-sm leading-relaxed resize-none max-h-48 min-h-[48px]" placeholder="Ask Atlas..."></textarea>
+                            <button id="btn-send" class="w-12 h-12 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl flex items-center justify-center shadow-lg transition-all active:scale-90 disabled:opacity-20 disabled:grayscale">
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </button>
+                        </div>
+                        <input type="file" id="file-input" multiple accept="image/*" class="hidden">
+                        <div class="mt-6 text-center">
+                            <span class="text-[8px] text-zinc-700 font-bold uppercase tracking-[0.4em]">Multimodal Neural Engine V2.5</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Gallery View -->
+            <section id="view-gallery" class="hidden flex-grow overflow-y-auto p-12">
+                <div class="max-w-6xl mx-auto">
+                    <div class="flex items-center justify-between mb-12">
+                        <h2 class="text-4xl font-black italic tracking-tight">AI CANVAS</h2>
+                        <span class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest bg-white/5 px-4 py-1 rounded-full">Your Generations</span>
+                    </div>
+                    <div id="gallery-grid" class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+                    <div id="gallery-empty" class="h-96 flex flex-col items-center justify-center text-center opacity-20">
+                        <i class="fa-solid fa-palette text-6xl mb-6"></i>
+                        <p class="font-bold uppercase tracking-widest text-xs">No visual data generated yet</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings View -->
+            <section id="view-settings" class="hidden flex-grow overflow-y-auto p-12">
+                <div class="max-w-2xl mx-auto space-y-12">
+                    <h2 class="text-4xl font-black italic tracking-tight">SYSTEM PREFS</h2>
+                    
+                    <div class="p-8 bg-blue-600/5 border border-blue-500/10 rounded-[2rem] space-y-4">
+                        <div class="flex items-center gap-3 text-blue-400">
+                            <i class="fa-solid fa-crown"></i>
+                            <span class="font-black text-xs uppercase tracking-widest">Atlas Elite Status</span>
+                        </div>
+                        <p class="text-sm text-zinc-400 font-medium">Your account is fully authorized. All AI capabilities are unlocked with zero subscription fees.</p>
+                    </div>
+
+                    <div class="space-y-6">
+                        <h3 class="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] border-b border-white/5 pb-4">Personal Profile</h3>
+                        <div class="grid gap-4">
+                            <div class="flex justify-between items-center bg-white/5 p-6 rounded-3xl border border-white/5 transition-colors hover:bg-white/[0.08]">
+                                <span class="text-xs font-bold text-zinc-500 uppercase">Registered Name</span>
+                                <span id="stat-name" class="text-sm font-bold text-white">Guest</span>
+                            </div>
+                            <div class="flex justify-between items-center bg-white/5 p-6 rounded-3xl border border-white/5 transition-colors hover:bg-white/[0.08]">
+                                <span class="text-xs font-bold text-zinc-500 uppercase">Temporal Signature</span>
+                                <span id="stat-dob" class="text-sm font-bold text-white">00/00/0000</span>
+                            </div>
+                            <div class="flex justify-between items-center bg-white/5 p-6 rounded-3xl border border-white/5 transition-colors hover:bg-white/[0.08]">
+                                <span class="text-xs font-bold text-zinc-500 uppercase">Access Level</span>
+                                <span class="px-3 py-1 bg-blue-500 text-[10px] font-black rounded-lg text-white uppercase italic">Atlas User</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Application Script -->
+    <script type="module">
+        import { GoogleGenAI } from "@google/genai";
+
+        class AtlasAI {
+            constructor() {
+                this.user = null;
+                this.pendingImages = [];
+                this.activeView = 'chat';
+                this.DEV_TRIGGER = "FFOODDIILL DEV";
+                this.SYSTEM_PROMPT = `You are Atlas AI, a world-class intelligent assistant. 
+Developer: Fodil from Algeria, Tiaret State.
+Guidelines:
+1. Speak in the user's language automatically.
+2. Maintain high professionalism and helpfulness.
+3. You are a specialist in coding, creative writing, and data analysis.
+4. If asked about fees, confirm this is a 100% free service.`;
+
+                this.init();
+            }
+
+            init() {
+                const stored = localStorage.getItem('atlas_v2_profile');
+                if (stored) {
+                    this.user = JSON.parse(stored);
+                    this.boot();
+                }
+
+                this.setupListeners();
+            }
+
+            setupListeners() {
+                document.getElementById('onboarding-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.user = {
+                        name: document.getElementById('user-name').value,
+                        dob: `${document.getElementById('dob-day').value}/${document.getElementById('dob-month').value}/${document.getElementById('dob-year').value}`,
+                        isDev: false
+                    };
+                    localStorage.setItem('atlas_v2_profile', JSON.stringify(this.user));
+                    this.boot();
+                });
+
+                document.getElementById('btn-send').addEventListener('click', () => this.handlePrompt());
+                document.getElementById('prompt-input').addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.handlePrompt();
+                    }
+                    e.target.style.height = 'auto';
+                    e.target.style.height = e.target.scrollHeight + 'px';
+                });
+
+                document.getElementById('file-input').addEventListener('change', (e) => this.handleFileUpload(e));
+            }
+
+            boot() {
+                document.getElementById('onboarding').style.display = 'none';
+                document.getElementById('main-app').style.display = 'flex';
+                document.getElementById('user-greeting').textContent = `System Initialized, ${this.user.name.split(' ')[0]}`;
+                document.getElementById('stat-name').textContent = this.user.name;
+                document.getElementById('stat-dob').textContent = this.user.dob;
+                if (this.user.isDev) document.getElementById('dev-badge').classList.remove('hidden');
+            }
+
+            nav(view) {
+                this.activeView = view;
+                ['chat', 'gallery', 'settings'].forEach(v => {
+                    document.getElementById(`view-${v}`).classList.add('hidden');
+                    document.getElementById(`nav-${v}`).classList.replace('bg-blue-600/10', 'hover:bg-white/5');
+                    document.getElementById(`nav-${v}`).classList.replace('text-blue-400', 'text-zinc-500');
+                });
+                document.getElementById(`view-${view}`).classList.remove('hidden');
+                document.getElementById(`nav-${view}`).classList.replace('hover:bg-white/5', 'bg-blue-600/10');
+                document.getElementById(`nav-${view}`).classList.replace('text-zinc-500', 'text-blue-400');
+                
+                if (window.innerWidth < 1024) this.toggleMenu();
+            }
+
+            toggleMenu() {
+                document.getElementById('sidebar').classList.toggle('-translate-x-full');
+            }
+
+            logout() {
+                localStorage.removeItem('atlas_v2_profile');
+                window.location.reload();
+            }
+
+            openFiles() {
+                document.getElementById('file-input').click();
+            }
+
+            handleFileUpload(e) {
+                const files = Array.from(e.target.files).slice(0, 4);
+                files.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        this.pendingImages.push({
+                            src: ev.target.result,
+                            data: ev.target.result.split(',')[1],
+                            mime: file.type
+                        });
+                        this.renderPreviews();
+                    };
+                    reader.readAsDataURL(file);
+                });
+                e.target.value = '';
+            }
+
+            renderPreviews() {
+                const container = document.getElementById('media-previews');
+                container.innerHTML = '';
+                this.pendingImages.forEach((img, i) => {
+                    const el = document.createElement('div');
+                    el.className = 'relative w-16 h-16 group';
+                    el.innerHTML = `
+                        <img src="${img.src}" class="w-full h-full object-cover rounded-xl border border-white/10">
+                        <button onclick="app.removeImg(${i})" class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-[8px] shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                            <i class="fa-solid fa-x"></i>
+                        </button>
+                    `;
+                    container.appendChild(el);
+                });
+            }
+
+            removeImg(idx) {
+                this.pendingImages.splice(idx, 1);
+                this.renderPreviews();
+            }
+
+            suggest(txt) {
+                document.getElementById('prompt-input').value = txt;
+                this.handlePrompt();
+            }
+
+            async handlePrompt() {
+                const input = document.getElementById('prompt-input');
+                const raw = input.value.trim();
+                if (!raw && this.pendingImages.length === 0) return;
+
+                if (raw === this.DEV_TRIGGER) {
+                    this.user.isDev = true;
+                    localStorage.setItem('atlas_v2_profile', JSON.stringify(this.user));
+                    document.getElementById('dev-badge').classList.remove('hidden');
+                    this.addMessage('assistant', "Developer authentication successful. Access granted, Fodil.");
+                    input.value = '';
+                    return;
+                }
+
+                document.getElementById('intro-hero').classList.add('hidden');
+                this.addMessage('user', raw || "[Media Attached]");
+                
+                const promptContent = raw;
+                const promptImages = [...this.pendingImages];
+
+                input.value = '';
+                input.style.height = 'auto';
+                this.pendingImages = [];
+                this.renderPreviews();
+                this.toggleTyping(true);
+
+                try {
+                    const genAI = new GoogleGenAI({ apiKey: process.env.API_KEY });
+                    const isImageReq = /(draw|image|generate|ارسم|صورة|تخيل)/i.test(promptContent) && promptImages.length === 0;
+
+                    if (isImageReq) {
+                        const response = await genAI.models.generateContent({
+                            model: 'gemini-2.5-flash-image',
+                            contents: { parts: [{ text: promptContent }] }
+                        });
+                        for (const part of response.candidates[0].content.parts) {
+                            if (part.inlineData) {
+                                const url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+                                this.addMessage('assistant', url, 'image');
+                                this.saveToGallery(url);
+                            }
+                        }
+                    } else {
+                        const model = 'gemini-3-flash-preview';
+                        const parts = [{ text: promptContent || "Analyze the provided visual data." }];
+                        promptImages.forEach(p => {
+                            parts.push({ inlineData: { data: p.data, mimeType: p.mime } });
+                        });
+
+                        const response = await genAI.models.generateContent({
+                            model: model,
+                            contents: [{ role: 'user', parts }],
+                            config: { systemInstruction: this.SYSTEM_PROMPT }
+                        });
+                        this.addMessage('assistant', response.text);
+                    }
+                } catch (err) {
+                    this.addMessage('assistant', "Connection interrupted. Please verify your network and retry.");
+                } finally {
+                    this.toggleTyping(false);
+                }
+            }
+
+            addMessage(role, content, type = 'text') {
+                const container = document.getElementById('chat-messages');
+                const wrapper = document.createElement('div');
+                wrapper.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'} slide-up`;
+                
+                const bubble = document.createElement('div');
+                bubble.className = `max-w-[80%] md:max-w-[70%] p-6 rounded-[2rem] shadow-2xl ${
+                    role === 'user' ? 'bg-blue-600 text-white rounded-tr-none' : 'glass border border-white/5 text-zinc-200 rounded-tl-none'
+                }`;
+
+                if (type === 'text') {
+                    const p = document.createElement('p');
+                    p.className = 'text-sm font-medium whitespace-pre-wrap leading-relaxed';
+                    p.textContent = content;
+                    bubble.appendChild(p);
+                } else {
+                    const img = document.createElement('img');
+                    img.src = content;
+                    img.className = 'rounded-2xl w-full h-auto shadow-2xl hover:scale-105 transition-transform cursor-pointer';
+                    img.onclick = () => window.open(content);
+                    bubble.appendChild(img);
+                }
+
+                const timestamp = document.createElement('div');
+                timestamp.className = `text-[8px] font-bold uppercase tracking-widest mt-4 opacity-40 ${role === 'user' ? 'text-right' : 'text-left'}`;
+                timestamp.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                bubble.appendChild(timestamp);
+
+                wrapper.appendChild(bubble);
+                container.appendChild(wrapper);
+                container.scrollTop = container.scrollHeight;
+            }
+
+            toggleTyping(show) {
+                const container = document.getElementById('chat-messages');
+                const existing = document.getElementById('typing-indicator');
+                if (show && !existing) {
+                    const el = document.createElement('div');
+                    el.id = 'typing-indicator';
+                    el.className = 'flex justify-start slide-up';
+                    el.innerHTML = `
+                        <div class="glass p-5 rounded-[1.5rem] flex gap-1.5 items-center">
+                            <span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>
+                        </div>
+                    `;
+                    container.appendChild(el);
+                    container.scrollTop = container.scrollHeight;
+                } else if (!show && existing) {
+                    existing.remove();
+                }
+            }
+
+            saveToGallery(url) {
+                document.getElementById('gallery-empty').classList.add('hidden');
+                const grid = document.getElementById('gallery-grid');
+                const card = document.createElement('div');
+                card.className = 'aspect-square rounded-[2rem] overflow-hidden border border-white/5 group relative cursor-pointer glass';
+                card.innerHTML = `
+                    <img src="${url}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <i class="fa-solid fa-expand text-white text-xl"></i>
+                    </div>
+                `;
+                card.onclick = () => window.open(url);
+                grid.prepend(card);
+            }
+        }
+
+        window.app = new AtlasAI();
+    </script>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>

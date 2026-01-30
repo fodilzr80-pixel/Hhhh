@@ -1,0 +1,8 @@
+{
+  "name": "Atlas AI",
+  "description": "A high-performance, ethical AI assistant featuring multi-language support, image generation (Nano Banana), and advanced developer modes.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
